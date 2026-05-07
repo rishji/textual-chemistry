@@ -1,0 +1,9 @@
+.DS_Store
+__pycache__/
+*.pyc
+
+# Private local inputs and generated analysis.
+data/private/
+
+# Local brainstorming/mockup companion files.
+.superpowers/
