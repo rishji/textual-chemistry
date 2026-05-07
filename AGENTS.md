@@ -1,6 +1,7 @@
 # AGENTS.md
 
 Codebase guidance for AI agents working in `/Users/rishi/Projects/vow-metrics`.
+The public site/repository name is `Textual Chemistry`.
 
 ## Project Goal
 
@@ -20,9 +21,6 @@ The project has moved past initial discovery. A first static prototype exists in
 
 The next priority is improving the content layer before spending more time on
 visual polish:
-
-- Rename site title/copy from "Our Messages, Mapped" to something closer to
-  "Our Messages in Data".
 - Improve topic filtering, relationship-specific first mentions, snippet
   selection, terms of endearment, and emoji breakdowns.
 - Add semantic filters for false positives such as `proposal` as proposing a
