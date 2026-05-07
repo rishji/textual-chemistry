@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Rishi + Esha</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Rishi + Esha</p>
+        <h1>Our Messages in Data</h1>
+      </div>
+      <nav>
+        <a href="#rhythm">Rhythm</a>
+        <a href="#words">Words</a>
+        <a href="#origins">Origins</a>
+        <a href="#topicMix">Topics</a>
+        <a href="#snippets">Snippets</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="sheet hero">
+        <p class="eyebrow">By the numbers</p>
+        <h2>90.2% of our days had a text.</h2>
+        <p class="script">
+          Across 782 calendar days, we texted on 705 of them. The longest silence was not distance; it was Vipassana.
+        </p>
+        <div class="stats-grid" id="statsGrid"></div>
+      </section>
+
+      <section class="sheet split" id="rhythm">
+        <div>
+          <p class="eyebrow">Messages by month</p>
+          <h2>The shape of us</h2>
+          <p class="script">It starts small, catches fire in 2024, and turns into a steady daily language.</p>
+          <div class="bar-chart" id="yearChart"></div>
+        </div>
+        <div class="note-card">
+          <p class="eyebrow">Busiest chapter</p>
+          <strong>July 2024</strong>
+          <span>1,456 messages · 31 active days</span>
+        </div>
+      </section>
+
+      <section class="sheet" id="heatmapSection">
+        <p class="eyebrow">When we text</p>
+        <h2>The daily rhythm</h2>
+        <p class="script">Each square is one hour of one weekday, shaded by volume. Tap any square.</p>
+        <div class="heatmap-wrap">
+          <div class="heatmap" id="heatmap"></div>
+        </div>
+        <div class="legend">
+          <span>Quiet</span><i></i><i></i><i></i><i></i><i></i><span>Loud</span>
+        </div>
+        <div class="selection-row">
+          <div class="selection-card" id="heatSelection">Select a square</div>
+          <div class="selection-card accent">All time<br /><strong>18,988</strong></div>
+        </div>
+      </section>
+
+      <section class="sheet" id="words">
+        <p class="eyebrow">What we say</p>
+        <h2>Terms of Endearment</h2>
+        <div class="feature-count">
+          <p>“cutie” appears</p>
+          <strong>1,026</strong>
+          <span>times, across 1,007 messages.</span>
+        </div>
+        <div class="terms-grid" id="termsGrid"></div>
+      </section>
+
+      <section class="sheet">
+        <p class="eyebrow">Top emoji</p>
+        <h2>The reaction shelf</h2>
+        <div class="emoji-grid" id="emojiGrid"></div>
+      </section>
+
+      <section class="sheet split" id="origins">
+        <div>
+          <p class="eyebrow">First mentions</p>
+          <h2>When words entered the chat</h2>
+          <div class="origin-list" id="originList"></div>
+        </div>
+        <div class="note-card">
+          <p class="eyebrow">First relationship label</p>
+          <strong>Aug 1, 2024</strong>
+          <span>Girlfriend enters the chat.</span>
+        </div>
+      </section>
+
+      <section class="sheet" id="topicMix">
+        <p class="eyebrow">Topic mix</p>
+        <h2>What the messages are about</h2>
+        <div class="topic-mix">
+          <div class="donut" id="categoryDonut"></div>
+          <div class="category-bars" id="categoryBars"></div>
+        </div>
+      </section>
+
+      <section class="sheet">
+        <p class="eyebrow">Conversation eras</p>
+        <h2>The chapters</h2>
+        <div class="era-list" id="eraList"></div>
+      </section>
+
+      <section class="sheet" id="snippets">
+        <p class="eyebrow">Private snippets</p>
+        <h2>Moments worth keeping</h2>
+        <div class="snippet-grid" id="snippetGrid"></div>
+      </section>
+    </main>
+
+    <script src="./data.js"></script>
+    <script src="./app.js"></script>
+  </body>
+</html>
