@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Message Breakdown · Textual Chemistry</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Rishi + Esha</p>
+        <h1>Textual Chemistry</h1>
+      </div>
+      <nav>
+        <a href="./index.html">Story</a>
+        <a href="./messages.html">Messages</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="sheet hero">
+        <p class="eyebrow">Message breakdown</p>
+        <h2>Between us</h2>
+        <p class="script">A production-safe aggregate view across iMessage and WhatsApp.</p>
+        <div class="stats-grid" id="statsGrid"></div>
+      </section>
+
+      <section class="sheet">
+        <p class="eyebrow">Sources + senders</p>
+        <h2>The split</h2>
+        <div class="breakdown-grid" id="messageBreakdown"></div>
+      </section>
+    </main>
+
+    <script src="./data.js"></script>
+    <script>
+      const data = window.VOW_DATA;
+      const fmt = new Intl.NumberFormat("en-US");
+
+      function card(className) {
+        const node = document.createElement("div");
+        node.className = className;
+        return node;
+      }
+
+      [
+        [data.totals.messages, "messages"],
+        [data.totals.esha, "from Esha"],
+        [data.totals.rishi, "from Rishi"],
+        [data.totals.attachments, "attachments"]
+      ].forEach(([number, label]) => {
+        const node = card("stat");
+        node.innerHTML = `<div><strong>${fmt.format(number)}</strong><span>${label}</span></div>`;
+        document.querySelector("#statsGrid").appendChild(node);
+      });
+
+      const wrap = document.querySelector("#messageBreakdown");
+      [
+        ["Sources", data.messageBreakdown.sources, "attachments"],
+        ["Senders", data.messageBreakdown.senders, "messages"]
+      ].forEach(([title, rows, unit]) => {
+        const node = card("breakdown-card");
+        node.innerHTML = `<strong>${title}</strong>`;
+        rows.forEach((row) => {
+          const line = card("breakdown-row");
+          const detail = unit === "attachments" ? `${fmt.format(row.attachments)} attachments` : `${fmt.format(row.messages)} messages`;
+          line.innerHTML = `<div><b>${row.label}</b><small>${fmt.format(row.messages)} messages · ${detail}</small></div><em>${row.pct}%</em><i><span style="width:${row.pct}%"></span></i>`;
+          node.appendChild(line);
+        });
+        wrap.appendChild(node);
+      });
+
+      const peak = card("breakdown-card accent-card");
+      peak.innerHTML = `<strong>${data.messageBreakdown.whatsappPeak.month}</strong><span>${fmt.format(data.messageBreakdown.whatsappPeak.messages)} WhatsApp messages · ${data.messageBreakdown.whatsappPeak.note}</span><p>WhatsApp adds ${fmt.format(data.messageBreakdown.netNewActiveDays)} active days to the combined timeline.</p>`;
+      wrap.appendChild(peak);
+    </script>
+  </body>
+</html>
