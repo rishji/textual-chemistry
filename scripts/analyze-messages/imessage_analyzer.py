@@ -23,9 +23,11 @@ from typing import Any
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_DB = PROJECT_ROOT / "data/private/messages/chat.db"
+DEFAULT_WHATSAPP_DB = PROJECT_ROOT / "data/private/messages/whatsapp.db"
 DEFAULT_OUT = PROJECT_ROOT / "data/private/processed"
 APPLE_EPOCH_OFFSET = 978_307_200
 DEFAULT_CHAT_ID = 34
+DEFAULT_WHATSAPP_CHAT_ID = 1
 
 STOP_WORDS = {
     "a",
@@ -257,6 +259,16 @@ def iter_messages(
     return list(conn.execute(query, params))
 
 
+def count_chat_attachments(conn: sqlite3.Connection, chat_id: int) -> int:
+    query = """
+        select count(distinct maj.attachment_id)
+        from chat_message_join cmj
+        join message_attachment_join maj on maj.message_id = cmj.message_id
+        where cmj.chat_id = ?
+    """
+    return int(conn.execute(query, [chat_id]).fetchone()[0] or 0)
+
+
 def clean_archive_text(blob: bytes | None) -> str:
     """Best-effort rich-text extraction from attributedBody.
 
@@ -464,6 +476,103 @@ def summarize_metadata(rows: list[sqlite3.Row]) -> dict[str, Any]:
         "byHour": dict(sorted(by_hour.items())),
         "byWeekday": dict(by_weekday.most_common()),
         "busiestDays": by_day.most_common(10),
+    }
+
+
+def row_value(row: sqlite3.Row | dict[str, Any], key: str, default: Any = None) -> Any:
+    if isinstance(row, dict):
+        return row.get(key, default)
+    try:
+        return row[key]
+    except (IndexError, KeyError):
+        return default
+
+
+def weekday_occurrences(start: dt.date, end: dt.date) -> dict[int, int]:
+    counts = {day: 0 for day in range(7)}
+    current = start
+    while current <= end:
+        # Site heatmap uses Sunday as 0.
+        site_weekday = (current.weekday() + 1) % 7
+        counts[site_weekday] += 1
+        current += dt.timedelta(days=1)
+    return counts
+
+
+def summarize_site_message_sources(sources: dict[str, list[sqlite3.Row | dict[str, Any]]]) -> dict[str, Any]:
+    by_day: collections.Counter[str] = collections.Counter()
+    by_month: dict[str, collections.Counter[str]] = collections.defaultdict(collections.Counter)
+    by_year: collections.Counter[str] = collections.Counter()
+    by_heat: collections.Counter[tuple[int, int]] = collections.Counter()
+    by_weekday: collections.Counter[int] = collections.Counter()
+    by_sender: collections.Counter[str] = collections.Counter()
+    by_source: collections.Counter[str] = collections.Counter()
+    attachments = 0
+
+    for source, rows in sources.items():
+        for row in rows:
+            when = apple_ns_to_datetime(row_value(row, "date"))
+            sender = "Rishi" if row_value(row, "is_from_me") else "Esha"
+            day = when.date().isoformat()
+            month_key = when.strftime("%Y-%m")
+            year = when.strftime("%Y")
+            site_weekday = int(when.strftime("%w"))
+            by_day[day] += 1
+            by_month[month_key][source] += 1
+            by_year[year] += 1
+            by_heat[(site_weekday, when.hour)] += 1
+            by_weekday[site_weekday] += 1
+            by_sender[sender] += 1
+            by_source[source] += 1
+            attachments += int(row_value(row, "cache_has_attachments", 0) or 0)
+
+    days = sorted(by_day)
+    total_days = 0
+    active_pct = None
+    weekday_averages = [0 for _ in range(7)]
+    if days:
+        start = dt.date.fromisoformat(days[0])
+        end = dt.date.fromisoformat(days[-1])
+        total_days = (end - start).days + 1
+        active_pct = round(100 * len(days) / total_days, 1)
+        weekday_counts = weekday_occurrences(start, end)
+        weekday_averages = [
+            round(by_weekday[day] / max(1, weekday_counts[day]), 1)
+            for day in range(7)
+        ]
+
+    months = []
+    for month_key in sorted(by_month):
+        month_date = dt.date.fromisoformat(f"{month_key}-01")
+        month_sources = dict(by_month[month_key])
+        month_days = {day for day in by_day if day.startswith(month_key)}
+        months.append(
+            {
+                "month": month_date.strftime("%b %y"),
+                "monthKey": month_key,
+                "messages": sum(month_sources.values()),
+                "activeDays": len(month_days),
+                "sourceBreakdown": month_sources,
+            }
+        )
+
+    return {
+        "schemaVersion": 1,
+        "generatedAt": dt.datetime.now().isoformat(timespec="seconds"),
+        "totals": {
+            "messageCount": sum(by_source.values()),
+            "activeDays": len(days),
+            "totalCalendarDays": total_days,
+            "quietDays": total_days - len(days) if days else 0,
+            "activeDayPct": active_pct,
+            "senderBreakdown": dict(by_sender),
+            "sourceBreakdown": dict(by_source),
+            "attachments": attachments,
+        },
+        "years": [{"year": year, "messages": count} for year, count in sorted(by_year.items())],
+        "months": months,
+        "weekdayAverages": weekday_averages,
+        "heatmap": [[day, hour, count] for (day, hour), count in sorted(by_heat.items())],
     }
 
 
@@ -735,7 +844,30 @@ def main() -> int:
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
     parser.add_argument("--aggregate-monthly", action="store_true", help="Aggregate existing monthly text summaries.")
     parser.add_argument("--topic-snippets", action="store_true", help="Write topic origins, categories, eras, and private snippets.")
+    parser.add_argument("--site-summary", action="store_true", help="Write aggregate public-safe site data from iMessage and WhatsApp.")
+    parser.add_argument("--whatsapp-db", type=Path, default=DEFAULT_WHATSAPP_DB)
+    parser.add_argument("--whatsapp-chat-id", type=int, default=DEFAULT_WHATSAPP_CHAT_ID)
     args = parser.parse_args()
+
+    if args.site_summary:
+        imessage_conn = connect(args.db)
+        whatsapp_conn = connect(args.whatsapp_db)
+        imessage_attachments = count_chat_attachments(imessage_conn, args.chat_id)
+        whatsapp_attachments = count_chat_attachments(whatsapp_conn, args.whatsapp_chat_id)
+        sources = {
+            "iMessage": iter_messages(imessage_conn, args.chat_id, None, None),
+            "WhatsApp": iter_messages(whatsapp_conn, args.whatsapp_chat_id, None, None),
+        }
+        payload = summarize_site_message_sources(sources)
+        payload["totals"]["attachments"] = imessage_attachments + whatsapp_attachments
+        payload["totals"]["sourceAttachmentBreakdown"] = {
+            "iMessage": imessage_attachments,
+            "WhatsApp": whatsapp_attachments,
+        }
+        output_path = args.out / "site-message-summary.json"
+        write_json(output_path, payload)
+        print(json.dumps({"output": str(output_path), "messages": payload["totals"]["messageCount"]}, indent=2))
+        return 0
 
     if args.aggregate_monthly:
         payload = aggregate_monthly_summaries(args.out, args.chat_id)

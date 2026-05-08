@@ -1,4 +1,5 @@
 import unittest
+import datetime as dt
 from pathlib import Path
 import sys
 import tempfile
@@ -8,6 +9,10 @@ import imessage_analyzer as analyzer
 
 
 class CleanupTests(unittest.TestCase):
+    def apple_ns(self, timestamp: str) -> int:
+        when = dt.datetime.fromisoformat(timestamp)
+        return int((when.timestamp() - analyzer.APPLE_EPOCH_OFFSET) * 1_000_000_000)
+
     def test_tokenize_removes_urls_archive_noise_and_filler(self):
         text = (
             "Cutie https://example.com/path?utm_source=x "
@@ -125,6 +130,29 @@ class CleanupTests(unittest.TestCase):
         self.assertEqual(analyzer.count_term_mentions(text, ["ctp"]), 1)
         self.assertEqual(analyzer.count_term_mentions(text, ["hb"]), 1)
         self.assertEqual(analyzer.count_term_mentions(text, ["ctphb", "ctp hb"]), 1)
+
+    def test_summarize_site_message_sources_combines_imessage_and_whatsapp(self):
+        sources = {
+            "iMessage": [
+                {"date": self.apple_ns("2024-06-01T09:00:00"), "is_from_me": 1, "cache_has_attachments": 0},
+                {"date": self.apple_ns("2024-06-01T10:00:00"), "is_from_me": 0, "cache_has_attachments": 1},
+            ],
+            "WhatsApp": [
+                {"date": self.apple_ns("2024-06-01T11:00:00"), "is_from_me": 0, "cache_has_attachments": 0},
+                {"date": self.apple_ns("2024-07-02T12:00:00"), "is_from_me": 1, "cache_has_attachments": 1},
+            ],
+        }
+
+        summary = analyzer.summarize_site_message_sources(sources)
+
+        self.assertEqual(summary["totals"]["messageCount"], 4)
+        self.assertEqual(summary["totals"]["activeDays"], 2)
+        self.assertEqual(summary["totals"]["totalCalendarDays"], 32)
+        self.assertEqual(summary["totals"]["quietDays"], 30)
+        self.assertEqual(summary["totals"]["senderBreakdown"], {"Rishi": 2, "Esha": 2})
+        self.assertEqual(summary["totals"]["sourceBreakdown"], {"iMessage": 2, "WhatsApp": 2})
+        self.assertEqual(summary["months"][0]["sourceBreakdown"], {"iMessage": 2, "WhatsApp": 1})
+        self.assertEqual(summary["months"][1]["sourceBreakdown"], {"WhatsApp": 1})
 
 
 if __name__ == "__main__":

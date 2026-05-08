@@ -33,12 +33,57 @@ function renderMessageChart() {
   series.forEach((item) => {
     const label = item.month || item.year;
     const isPeak = item.messages === max;
+    const whatsapp = item.sourceBreakdown?.WhatsApp || 0;
     const bar = el("div", `bar ${isPeak ? "highlight" : ""}`);
     bar.style.height = `${Math.max(22, (item.messages / max) * 260)}px`;
-    bar.title = `${label} · ${fmt.format(item.messages)} messages`;
+    bar.title = `${label} · ${fmt.format(item.messages)} messages${whatsapp ? ` · ${fmt.format(whatsapp)} on WhatsApp` : ""}`;
     bar.innerHTML = `<span>${label}<br>${fmt.format(item.messages)}</span>`;
     chart.appendChild(bar);
   });
+}
+
+function renderMessageBreakdown() {
+  const wrap = document.querySelector("#messageBreakdown");
+  if (!wrap || !data.messageBreakdown) return;
+
+  const sourceCard = el("div", "breakdown-card");
+  sourceCard.innerHTML = `<strong>Sources</strong><span>iMessage carries the main archive; WhatsApp adds the side channel.</span>`;
+  data.messageBreakdown.sources.forEach((source) => {
+    const row = el("div", "breakdown-row");
+    row.innerHTML = `
+      <div>
+        <b>${source.label}</b>
+        <small>${fmt.format(source.messages)} messages · ${fmt.format(source.attachments)} attachments</small>
+      </div>
+      <em>${source.pct}%</em>
+      <i><span style="width:${source.pct}%"></span></i>
+    `;
+    sourceCard.appendChild(row);
+  });
+
+  const senderCard = el("div", "breakdown-card");
+  senderCard.innerHTML = `<strong>Senders</strong><span>${fmt.format(data.totals.messages)} messages between Rishi and Esha.</span>`;
+  data.messageBreakdown.senders.forEach((sender) => {
+    const row = el("div", "breakdown-row");
+    row.innerHTML = `
+      <div>
+        <b>${sender.label}</b>
+        <small>${fmt.format(sender.messages)} messages</small>
+      </div>
+      <em>${sender.pct}%</em>
+      <i><span style="width:${sender.pct}%"></span></i>
+    `;
+    senderCard.appendChild(row);
+  });
+
+  const detailCard = el("div", "breakdown-card accent-card");
+  detailCard.innerHTML = `
+    <strong>${data.messageBreakdown.whatsappPeak.month}</strong>
+    <span>${fmt.format(data.messageBreakdown.whatsappPeak.messages)} WhatsApp messages · ${data.messageBreakdown.whatsappPeak.note}</span>
+    <p>WhatsApp adds ${fmt.format(data.messageBreakdown.netNewActiveDays)} active days to the combined timeline.</p>
+  `;
+
+  wrap.append(sourceCard, senderCard, detailCard);
 }
 
 function heatLevel(count) {
@@ -72,7 +117,7 @@ function renderHeatmap() {
         cell.classList.add("selected");
         const average = data.weekdayAverages?.[day];
         const averageText = average ? ` · ${average} texts per ${weekdayNames[day]} on average` : "";
-        selection.textContent = `${weekdayNames[day]} · ${hour}:00 — ${fmt.format(count)} messages all time${averageText}`;
+        selection.textContent = `${weekdayNames[day]} · ${hour}:00 - ${fmt.format(count)} messages all time${averageText}`;
       });
       heatmap.appendChild(cell);
     }
@@ -150,6 +195,7 @@ function renderSnippets() {
 
 renderStats();
 renderMessageChart();
+renderMessageBreakdown();
 renderHeatmap();
 renderTerms();
 renderEmojis();
