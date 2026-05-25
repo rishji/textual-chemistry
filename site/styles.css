@@ -547,7 +547,11 @@ h2 {
 }
 
 @media (max-width: 760px) {
-  .topbar,
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .split,
   .selection-row,
   .topic-mix {
@@ -555,7 +559,23 @@ h2 {
   }
 
   .topbar nav {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    -webkit-mask-image: linear-gradient(to right, black 85%, transparent 100%);
+    mask-image: linear-gradient(to right, black 85%, transparent 100%);
     margin-top: 0.8rem;
+    padding-bottom: 2px;
+  }
+
+  .topbar nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hero {
+    min-height: 40vh;
   }
 
   .stats-grid,
@@ -570,8 +590,29 @@ h2 {
     margin-top: 0.8rem;
   }
 
+  .selection-card {
+    font-size: 1.25rem;
+  }
+
   .donut {
     margin-bottom: 1.5rem;
+  }
+
+  .bar-chart {
+    gap: 0.5rem;
+  }
+
+  .bar {
+    min-width: 36px;
+  }
+
+  .heatmap-wrap {
+    -webkit-mask-image: linear-gradient(to right, black 88%, transparent 100%);
+    mask-image: linear-gradient(to right, black 88%, transparent 100%);
+  }
+
+  main {
+    margin-bottom: 3rem;
   }
 }
 
@@ -582,5 +623,13 @@ h2 {
   .snippet-grid,
   .breakdown-grid {
     grid-template-columns: 1fr;
+  }
+
+  .hero {
+    min-height: 30vh;
+  }
+
+  .bar {
+    min-width: 30px;
   }
 }
