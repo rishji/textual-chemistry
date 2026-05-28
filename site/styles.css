@@ -102,7 +102,7 @@ main {
 h2 {
   margin: 0;
   font-family: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
-  font-size: clamp(3rem, 8vw, 5.75rem);
+  font-size: clamp(2.25rem, 8vw, 5.75rem);
   line-height: 0.95;
   font-weight: 700;
   letter-spacing: 0;
@@ -112,7 +112,7 @@ h2 {
   max-width: 700px;
   color: var(--muted);
   font-family: "Bradley Hand", "Segoe Print", "Comic Sans MS", cursive;
-  font-size: clamp(1.45rem, 3.2vw, 2.25rem);
+  font-size: clamp(1.1rem, 3.2vw, 2.25rem);
   line-height: 1.45;
 }
 
@@ -325,7 +325,7 @@ h2 {
   display: block;
   color: var(--green);
   font-family: "Bradley Hand", "Segoe Print", cursive;
-  font-size: clamp(4rem, 10vw, 7rem);
+  font-size: clamp(2.8rem, 10vw, 7rem);
 }
 
 .terms-grid,
@@ -547,15 +547,38 @@ h2 {
 }
 
 @media (max-width: 760px) {
-  .topbar,
   .split,
   .selection-row,
   .topic-mix {
     display: block;
   }
 
+  .topbar {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+
   .topbar nav {
-    margin-top: 0.8rem;
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+    margin-top: 0;
+  }
+
+  .topbar nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hero {
+    min-height: 50vh;
+  }
+
+  .note-card {
+    margin-top: 1.5rem;
   }
 
   .stats-grid,
@@ -582,5 +605,18 @@ h2 {
   .snippet-grid,
   .breakdown-grid {
     grid-template-columns: 1fr;
+  }
+
+  .sheet {
+    padding: 1.25rem;
+  }
+
+  .selection-card {
+    font-size: 1.2rem;
+  }
+
+  .topbar a {
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
   }
 }
