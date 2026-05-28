@@ -14,6 +14,10 @@
   box-sizing: border-box;
 }
 
+html {
+  overflow-x: clip;
+}
+
 body {
   margin: 0;
   color: var(--ink);
@@ -72,6 +76,7 @@ main {
   border: 4px solid var(--green);
   border-radius: 28px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.24);
+  min-width: 0;
 }
 
 .sheet::before {
@@ -106,6 +111,7 @@ h2 {
   line-height: 0.95;
   font-weight: 700;
   letter-spacing: 0;
+  overflow-wrap: break-word;
 }
 
 .script {
@@ -575,6 +581,10 @@ h2 {
 
   .hero {
     min-height: 50vh;
+  }
+
+  h2 {
+    font-size: clamp(1.6rem, 7vw, 2.5rem);
   }
 
   .note-card {
